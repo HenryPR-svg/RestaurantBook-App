@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel Administrador - RestaurantBook</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f7f6;
+        padding: 20px;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+      }
+      th {
+        background-color: #007bff;
+        color: white;
+      }
+      tr:hover {
+        background-color: #f1f1f1;
+      }
+      .badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        color: white;
+        font-size: 12px;
+      }
+      .bg-success {
+        background-color: #28a745;
+      }
+      .bg-secondary {
+        background-color: #6c757d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Panel de Control - Administrador</h1>
+      <h2>Lista de Usuarios del Sistema</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-usuarios"></tbody>
+      </table>
+    </div>
+
+    <script>
+      // Esta es la magia: Consumiendo tu propia API
+      fetch("http://localhost:3000/api/admin/usuarios")
+        .then((respuesta) => respuesta.json())
+        .then((usuarios) => {
+          const tabla = document.getElementById("tabla-usuarios");
+
+          // Recorremos cada usuario que devolvió la base de datos
+          usuarios.forEach((user) => {
+            // Ponemos color verde si está activo, gris si no.
+            let estadoColor =
+              user.estado === "Activo" ? "bg-success" : "bg-secondary";
+
+            const fila = `<tr>
+                        <td>${user.id_usuario}</td>
+                        <td><strong>${user.nombre}</strong></td>
+                        <td>${user.correo}</td>
+                        <td>${user.rol}</td>
+                        <td><span class="badge ${estadoColor}">${user.estado}</span></td>
+                    </tr>`;
+
+            tabla.innerHTML += fila; // Agregamos la fila a la tabla visual
+          });
+        })
+        .catch((error) => {
+          console.error("Error al cargar usuarios:", error);
+          document.getElementById("tabla-usuarios").innerHTML =
+            '<tr><td colspan="5">Error al conectar con la base de datos.</td></tr>';
+        });
+    </script>
+  </body>
+</html>
