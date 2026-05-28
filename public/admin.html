@@ -8,13 +8,14 @@
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         background-color: #f4f7f6;
+        margin: 0;
         padding: 20px;
       }
       .container {
-        max-width: 900px;
+        max-width: 1000px;
         margin: 0 auto;
         background: white;
-        padding: 20px;
+        padding: 25px;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
@@ -23,10 +24,43 @@
         border-bottom: 2px solid #007bff;
         padding-bottom: 10px;
       }
+      .form-container {
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+      }
+      input,
+      select,
+      button {
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      .btn-danger {
+        background-color: #dc3545;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+      .btn-danger:hover {
+        background-color: #c82333;
+      }
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
+        margin-top: 10px;
       }
       th,
       td {
@@ -58,8 +92,38 @@
   <body>
     <div class="container">
       <h1>Panel de Control - Administrador</h1>
-      <h2>Lista de Usuarios del Sistema</h2>
 
+      <div class="form-container">
+        <h3>Agregar Nuevo Usuario</h3>
+        <form id="form-usuario">
+          <input
+            type="text"
+            id="nombre"
+            placeholder="Nombre completo"
+            required
+          />
+          <input
+            type="email"
+            id="correo"
+            placeholder="Correo electrónico"
+            required
+          />
+          <input
+            type="password"
+            id="password"
+            placeholder="Contraseña"
+            required
+          />
+          <select id="rol" aria-label="Rol del usuario">
+            <option value="Cliente">Cliente</option>
+            <option value="Mesero">Mesero</option>
+            <option value="Administrador">Administrador</option>
+          </select>
+          <button type="submit">Guardar Usuario</button>
+        </form>
+      </div>
+
+      <h2>Lista de Usuarios Registrados</h2>
       <table>
         <thead>
           <tr>
@@ -68,6 +132,7 @@
             <th>Correo</th>
             <th>Rol</th>
             <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="tabla-usuarios"></tbody>
@@ -75,34 +140,76 @@
     </div>
 
     <script>
-      // Esta es la magia: Consumiendo tu propia API
-      fetch("http://localhost:3000/api/admin/usuarios")
-        .then((respuesta) => respuesta.json())
-        .then((usuarios) => {
-          const tabla = document.getElementById("tabla-usuarios");
+      const apiUrl = "http://localhost:3000/api/admin/usuarios";
 
-          // Recorremos cada usuario que devolvió la base de datos
-          usuarios.forEach((user) => {
-            // Ponemos color verde si está activo, gris si no.
-            let estadoColor =
-              user.estado === "Activo" ? "bg-success" : "bg-secondary";
+      // 1. Cargar Usuarios (GET)
+      function cargarUsuarios() {
+        fetch(apiUrl)
+          .then((res) => res.json())
+          .then((usuarios) => {
+            const tabla = document.getElementById("tabla-usuarios");
+            tabla.innerHTML = ""; // Limpiar antes de cargar
 
-            const fila = `<tr>
-                        <td>${user.id_usuario}</td>
-                        <td><strong>${user.nombre}</strong></td>
-                        <td>${user.correo}</td>
-                        <td>${user.rol}</td>
-                        <td><span class="badge ${estadoColor}">${user.estado}</span></td>
-                    </tr>`;
+            usuarios.forEach((user) => {
+              let estadoColor =
+                user.estado === "Activo" ? "bg-success" : "bg-secondary";
+              tabla.innerHTML += `<tr>
+                            <td>${user.id_usuario}</td>
+                            <td><strong>${user.nombre}</strong></td>
+                            <td>${user.correo}</td>
+                            <td>${user.rol}</td>
+                            <td><span class="badge ${estadoColor}">${user.estado}</span></td>
+                            <td><button class="btn-danger" onclick="eliminarUsuario(${user.id_usuario})">Eliminar</button></td>
+                        </tr>`;
+            });
+          })
+          .catch((err) => console.error("Error al cargar:", err));
+      }
 
-            tabla.innerHTML += fila; // Agregamos la fila a la tabla visual
-          });
-        })
-        .catch((error) => {
-          console.error("Error al cargar usuarios:", error);
-          document.getElementById("tabla-usuarios").innerHTML =
-            '<tr><td colspan="5">Error al conectar con la base de datos.</td></tr>';
+      // 2. Crear Usuario (POST)
+      document
+        .getElementById("form-usuario")
+        .addEventListener("submit", function (e) {
+          e.preventDefault(); // Evita que la página se recargue
+
+          const nuevoUsuario = {
+            nombre: document.getElementById("nombre").value,
+            correo: document.getElementById("correo").value,
+            password: document.getElementById("password").value,
+            rol: document.getElementById("rol").value,
+          };
+
+          fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(nuevoUsuario),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              alert(data.mensaje); // Mostrar mensaje de éxito
+              document.getElementById("form-usuario").reset(); // Limpiar formulario
+              cargarUsuarios(); // Recargar la tabla
+            })
+            .catch((err) =>
+              alert("Error al crear usuario. Revisa si el correo ya existe."),
+            );
         });
+
+      // 3. Eliminar Usuario (DELETE)
+      function eliminarUsuario(id) {
+        if (confirm("¿Estás seguro de eliminar este usuario?")) {
+          fetch(`${apiUrl}/${id}`, { method: "DELETE" })
+            .then((res) => res.json())
+            .then((data) => {
+              alert(data.mensaje);
+              cargarUsuarios(); // Recargar la tabla
+            })
+            .catch((err) => console.error("Error al eliminar:", err));
+        }
+      }
+
+      // Cargar datos al abrir la página
+      cargarUsuarios();
     </script>
   </body>
 </html>
