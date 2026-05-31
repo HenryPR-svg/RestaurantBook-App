@@ -14,9 +14,11 @@ app.use(express.static("public"));
 
 // 2. Importar tus nuevas rutas
 const adminRoutes = require("./src/routes/adminRoutes");
+const menuRoutes = require("./src/routes/menuRoutes");
 
 // 3. Usar las rutas en el servidor
 app.use("/api/admin", adminRoutes);
+app.use("/api/menu", menuRoutes);
 
 // Ruta de prueba
 app.get("/", (req, res) => {
